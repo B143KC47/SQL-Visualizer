@@ -1,14 +1,12 @@
-# SQL Visualizer
+# React + Vite
 
-一个交互式SQL可视化工具，允许用户在左侧编辑SQL查询，在右侧查看可视化结果。
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 功能特点
-- 左侧DB结构，表Table
-- 中间SQL编辑器，支持SQL语法高亮
-- 中间下方是查询结构
-- 右侧可视化区域，显示视觉化的数据表和视觉化的查询结果
-- 根据SQL查询自动高亮相关单元格
-  - SELECT语句高亮选中的列
-  - WHERE条件高亮符合条件的单元格（使用不同颜色）
-- 实时执行可视化结果
+Currently, two official plugins are available:
 
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

@@ -1,109 +1,256 @@
-.header {
-  background-color: #1890ff;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
+/* 全局变量 */
+:root {
+    --accent-warm: #ff6b6b;
+    --accent-light: #ffb8b8;
+    --bg-dark: #121212;
+    --bg-card: rgba(30, 30, 30, 0.7);
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --sidebar-width: 250px;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --glass-effect: blur(10px);
+    --card-radius: 12px;
+    --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.site-layout-background {
-  background: #fff;
+/* 标题样式 */
+h1, h2 {
+    margin-bottom: 1.2rem;
+    background: linear-gradient(45deg, var(--accent-warm), var(--accent-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+}
+
+h1 {
+    font-size: 2.2rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* 主布局 */
+.app-container {
+    background-color: var(--bg-dark);
+    background-image: url('./assets/pattern.svg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    padding: 1.5rem;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas: 
+        "sidebar editor visualization"
+        "sidebar results visualization";
+    height: 100%;
+    gap: 1rem;
+    background-color: transparent;
+}
+
+/* 组件样式 */
+.sidebar {
+    grid-area: sidebar;
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-effect);
+    -webkit-backdrop-filter: var(--glass-effect);
+    padding: 1.5rem;
+    overflow-y: auto;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
 }
 
 .main-content {
-  display: flex;
-  height: calc(100vh - 140px);
-  gap: 20px;
+    grid-area: editor;
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-effect);
+    -webkit-backdrop-filter: var(--glass-effect);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
 }
 
-.editor-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 400px;
+.sql-editor-container {
+    margin-bottom: 1rem;
 }
 
-.visualization-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 400px;
-  border-left: 1px solid #f0f0f0;
-  padding-left: 20px;
+.query-result-container {
+    grid-area: results;
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-effect);
+    -webkit-backdrop-filter: var(--glass-effect);
+    padding: 1.5rem;
+    overflow-y: auto;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
 }
 
-/* 数据库面板样式 */
-.db-panel {
-  padding: 16px;
-  height: 100%;
-  overflow: auto;
+.visualization {
+    grid-area: visualization;
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-effect);
+    -webkit-backdrop-filter: var(--glass-effect);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
 }
 
-.db-table {
-  margin-bottom: 8px;
-  cursor: pointer;
+/* 数据库结构样式 */
+.db-structure {
+    margin-top: 1rem;
 }
 
-.db-table-title {
-  font-weight: bold;
-  margin-bottom: 4px;
+.db-name, .table-name {
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
-.db-column {
-  padding-left: 16px;
-  color: #666;
-  font-size: 12px;
+.db-name:hover, .table-name:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-warm);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* SQL编辑器样式 */
-.sql-editor {
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  min-height: 200px;
-  margin-bottom: 16px;
+.table-list, .column-list {
+    list-style: none;
+    padding-left: 1.25rem;
+    margin-top: 0.75rem;
 }
 
-/* 查询结构样式 */
-.query-structure {
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  padding: 16px;
-  margin-top: 16px;
-  background-color: #fafafa;
+.column-list li {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    border-left: 2px solid var(--border-color);
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
 }
 
-/* 可视化面板样式 */
-.visualization-panel {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+.column-list li:hover {
+    border-left-color: var(--accent-warm);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
-.result-table {
-  margin-bottom: 20px;
-  overflow: auto;
+/* 查询结果表格样式 */
+.query-result {
+    overflow-x: auto;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
-.chart-controls {
-  margin-bottom: 16px;
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1rem;
 }
 
+th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: var(--accent-light);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+th:first-child {
+    border-top-left-radius: 8px;
+}
+
+th:last-child {
+    border-top-right-radius: 8px;
+}
+
+tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
+tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* 可视化区域样式 */
 .chart-container {
-  flex: 1;
-  min-height: 300px;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-  padding: 16px;
+    flex: 1;
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
 }
 
-/* 高亮样式 */
-.highlight-select {
-  background-color: rgba(24, 144, 255, 0.2);
+.visualization-info {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
 }
 
-.highlight-where {
-  background-color: rgba(250, 219, 20, 0.2);
+/* 按钮样式 */
+.btn {
+    background: linear-gradient(45deg, var(--accent-warm), var(--accent-light));
+    color: #000;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
-.highlight-join {
-  background-color: rgba(82, 196, 26, 0.2);
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+}
+
+.btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
 }
