@@ -1,0 +1,109 @@
+.header {
+  background-color: #1890ff;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+}
+
+.site-layout-background {
+  background: #fff;
+}
+
+.main-content {
+  display: flex;
+  height: calc(100vh - 140px);
+  gap: 20px;
+}
+
+.editor-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+}
+
+.visualization-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  border-left: 1px solid #f0f0f0;
+  padding-left: 20px;
+}
+
+/* 数据库面板样式 */
+.db-panel {
+  padding: 16px;
+  height: 100%;
+  overflow: auto;
+}
+
+.db-table {
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.db-table-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.db-column {
+  padding-left: 16px;
+  color: #666;
+  font-size: 12px;
+}
+
+/* SQL编辑器样式 */
+.sql-editor {
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  min-height: 200px;
+  margin-bottom: 16px;
+}
+
+/* 查询结构样式 */
+.query-structure {
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 16px;
+  background-color: #fafafa;
+}
+
+/* 可视化面板样式 */
+.visualization-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.result-table {
+  margin-bottom: 20px;
+  overflow: auto;
+}
+
+.chart-controls {
+  margin-bottom: 16px;
+}
+
+.chart-container {
+  flex: 1;
+  min-height: 300px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+/* 高亮样式 */
+.highlight-select {
+  background-color: rgba(24, 144, 255, 0.2);
+}
+
+.highlight-where {
+  background-color: rgba(250, 219, 20, 0.2);
+}
+
+.highlight-join {
+  background-color: rgba(82, 196, 26, 0.2);
+}
