@@ -1,233 +1,265 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Rect, Text, Group } from 'react-konva';
+import React, { useState, useEffect } from 'react';
+import { Bar, Line, Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 
-// 定义常量
-const CELL_WIDTH = 120;
-const CELL_HEIGHT = 40;
-const HEADER_HEIGHT = 40;
-const TABLE_PADDING = 20;
-const COLORS = {
-  headerBg: '#ff6b6b',
-  headerText: '#000000',
-  cellBg: 'rgba(255, 255, 255, 0.05)',
-  cellBgAlt: 'rgba(255, 255, 255, 0.08)',
-  cellText: '#f8f8f8',
-  highlightedBg: 'rgba(255, 107, 107, 0.2)',
-  border: 'rgba(255, 255, 255, 0.08)'
-};
+// 注册Chart.js组件
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const Visualization = ({ queryResults, selectedText }) => {
-  const [highlightedFields, setHighlightedFields] = useState([]);
-  const [tablePosition, setTablePosition] = useState({ x: 50, y: 50 });
-  const [isDragging, setIsDragging] = useState(false);
-  const stageRef = useRef(null);
-  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
+  const [chartType, setChartType] = useState('bar'); // 默认显示柱状图
+  const [chartData, setChartData] = useState(null);
+  const [sqlVisualization, setSqlVisualization] = useState({
+    tables: [],
+    joins: [],
+    conditions: []
+  });
   
-  // 计算表格尺寸
-  const calculateTableSize = () => {
-    if (!queryResults || queryResults.length === 0) return { width: 0, height: 0 };
-    
-    const headers = Object.keys(queryResults[0]);
-    const width = headers.length * CELL_WIDTH + 2 * TABLE_PADDING;
-    const height = HEADER_HEIGHT + queryResults.length * CELL_HEIGHT + 2 * TABLE_PADDING;
-    
-    return { width, height };
-  };
-  
-  // 更新舞台尺寸
-  useEffect(() => {
-    const updateSize = () => {
-      const container = document.querySelector('.chart-container');
-      if (container) {
-        setStageSize({
-          width: container.offsetWidth,
-          height: container.offsetHeight
-        });
-      }
-    };
-    
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-
-  // 当查询结果变化时重置表格位置
-  useEffect(() => {
-    if (queryResults && queryResults.length > 0) {
-      setTablePosition({ x: 50, y: 50 });
-    }
-  }, [queryResults]);
-  
-  // 当选中的SQL文本变化时，更新高亮字段
+  // 当选中的SQL文本变化时，更新SQL可视化
   useEffect(() => {
     if (selectedText) {
-      updateHighlightedFields();
+      updateSqlVisualization();
+      prepareChartData();
     } else {
-      setHighlightedFields([]);
+      setSqlVisualization({
+        tables: [],
+        joins: [],
+        conditions: []
+      });
+      setChartData(null);
     }
-  }, [selectedText]);
+  }, [selectedText, queryResults]);
   
-  // 根据选中的SQL文本更新高亮字段
-  const updateHighlightedFields = () => {
+  // 准备图表数据
+  const prepareChartData = () => {
+    if (!queryResults || queryResults.length === 0) return;
+    
+    // 获取数据中的数值型字段
+    const firstRow = queryResults[0];
+    const numericFields = Object.keys(firstRow).filter(key => {
+      return typeof firstRow[key] === 'number';
+    });
+    
+    // 如果没有数值型字段，无法创建图表
+    if (numericFields.length === 0) return;
+    
+    // 默认使用第一个数值字段
+    const dataField = numericFields[0];
+    
+    // 尝试找到一个非数值字段作为标签
+    const labelFields = Object.keys(firstRow).filter(key => {
+      return typeof firstRow[key] !== 'number';
+    });
+    
+    const labelField = labelFields.length > 0 ? labelFields[0] : Object.keys(firstRow)[0];
+    
+    // 准备图表数据
+    const labels = queryResults.map(row => String(row[labelField]));
+    const data = queryResults.map(row => row[dataField]);
+    
+    const chartData = {
+      labels,
+      datasets: [
+        {
+          label: `${dataField}`,
+          data,
+          backgroundColor: 'rgba(255, 107, 107, 0.5)',
+          borderColor: 'rgba(255, 107, 107, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+    
+    setChartData(chartData);
+  };
+  
+  // 解析SQL语句，提取表、连接和条件信息
+  const updateSqlVisualization = () => {
     if (!selectedText) return;
     
-    // 解析选中的文本，提取字段名
-    const fields = [];
+    const sqlInfo = {
+      tables: [],
+      joins: [],
+      conditions: []
+    };
     
-    // 处理SELECT语句中的字段
-    if (selectedText.includes('*')) {
-      // 如果选中了*，高亮所有字段
-      if (queryResults && queryResults.length > 0) {
-        const firstRow = queryResults[0];
-        Object.keys(firstRow).forEach(key => fields.push(key));
-      }
-    } else {
-      // 尝试从选中文本中提取字段名
-      // 移除SQL关键字，只保留字段名
-      const cleanText = selectedText.replace(/SELECT|FROM|WHERE|JOIN|ON|AND|OR|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET/gi, '');
-      
-      // 分割并清理字段名
-      const extractedFields = cleanText.split(',').map(field => {
-        // 提取字段名，处理别名情况 (field AS alias)
-        const fieldParts = field.trim().split(/\s+AS\s+/i);
-        return fieldParts[0].trim().replace(/[^a-zA-Z0-9_]/g, '');
-      }).filter(field => field.length > 0);
-      
-      fields.push(...extractedFields);
+    // 提取表名
+    const fromRegex = /FROM\s+([\w\s,]+)(?:\s+WHERE|\s+JOIN|\s+GROUP BY|\s+ORDER BY|\s+LIMIT|;|$)/i;
+    const fromMatch = selectedText.match(fromRegex);
+    
+    if (fromMatch && fromMatch[1]) {
+      const tablesStr = fromMatch[1].trim();
+      sqlInfo.tables = tablesStr.split(',').map(t => t.trim());
     }
     
-    console.log('高亮字段:', fields);
-    setHighlightedFields(fields);
-  };
-
-  // 处理拖拽开始
-  const handleDragStart = () => {
-    setIsDragging(true);
+    // 提取JOIN
+    const joinRegex = /JOIN\s+(\w+)\s+ON\s+([\w\.\s=]+)/gi;
+    let joinMatch;
+    
+    while ((joinMatch = joinRegex.exec(selectedText)) !== null) {
+      if (joinMatch[1] && joinMatch[2]) {
+        sqlInfo.joins.push({
+          table: joinMatch[1].trim(),
+          condition: joinMatch[2].trim()
+        });
+        
+        // 添加JOIN的表到表列表
+        if (!sqlInfo.tables.includes(joinMatch[1].trim())) {
+          sqlInfo.tables.push(joinMatch[1].trim());
+        }
+      }
+    }
+    
+    // 提取WHERE条件
+    const whereRegex = /WHERE\s+([^;]+?)(?:\s+GROUP BY|\s+ORDER BY|\s+LIMIT|;|$)/i;
+    const whereMatch = selectedText.match(whereRegex);
+    
+    if (whereMatch && whereMatch[1]) {
+      const conditionsStr = whereMatch[1].trim();
+      // 简单分割条件（这里只处理AND连接的简单条件）
+      sqlInfo.conditions = conditionsStr.split(/\s+AND\s+/i).map(c => c.trim());
+    }
+    
+    // 提取ORDER BY
+    const orderByRegex = /ORDER\s+BY\s+([^;]+?)(?:\s+LIMIT|;|$)/i;
+    const orderByMatch = selectedText.match(orderByRegex);
+    
+    if (orderByMatch && orderByMatch[1]) {
+      const orderByStr = orderByMatch[1].trim();
+      sqlInfo.orderBy = orderByStr;
+    }
+    
+    console.log('SQL可视化信息:', sqlInfo);
+    setSqlVisualization(sqlInfo);
   };
   
-  // 处理拖拽结束
-  const handleDragEnd = (e) => {
-    setIsDragging(false);
-    setTablePosition({
-      x: e.target.x(),
-      y: e.target.y()
-    });
-  };
-
-  // 渲染表格单元格
-  const renderCell = (text, x, y, width, height, isHeader = false, isHighlighted = false) => {
-    const bgColor = isHeader 
-      ? COLORS.headerBg 
-      : isHighlighted 
-        ? COLORS.highlightedBg 
-        : y % 2 === 0 
-          ? COLORS.cellBg 
-          : COLORS.cellBgAlt;
+  // 渲染SQL可视化图表
+  const renderChart = () => {
+    if (!chartData) return null;
     
-    const textColor = isHeader ? COLORS.headerText : COLORS.cellText;
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: '查询结果可视化',
+        },
+      },
+    };
     
-    return (
-      <Group key={`${x}-${y}`}>
-        <Rect
-          x={x}
-          y={y}
-          width={width}
-          height={height}
-          fill={bgColor}
-          stroke={COLORS.border}
-          strokeWidth={1}
-        />
-        <Text
-          x={x + 5}
-          y={y + height / 2 - 8}
-          text={String(text)}
-          fontSize={14}
-          fontFamily="Arial"
-          fill={textColor}
-          width={width - 10}
-          ellipsis={true}
-        />
-      </Group>
-    );
-  };
-
-  // 渲染Canvas表格
-  const renderCanvasTable = () => {
-    if (!queryResults || queryResults.length === 0) {
-      return (
-        <Text
-          x={stageSize.width / 2 - 50}
-          y={stageSize.height / 2}
-          text="暂无数据"
-          fontSize={16}
-          fontFamily="Arial"
-        />
-      );
+    switch (chartType) {
+      case 'bar':
+        return <Bar data={chartData} options={options} />;
+      case 'line':
+        return <Line data={chartData} options={options} />;
+      case 'pie':
+        return <Pie data={chartData} options={options} />;
+      default:
+        return null;
     }
-    
-    const headers = Object.keys(queryResults[0]);
-    const tableSize = calculateTableSize();
+  };
+  
+  // 渲染SQL结构可视化
+  const renderSqlStructure = () => {
+    if (sqlVisualization.tables.length === 0) return null;
     
     return (
-      <Group
-        x={tablePosition.x}
-        y={tablePosition.y}
-        draggable
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        {/* 渲染表头 */}
-        {headers.map((header, colIndex) => {
-          const x = TABLE_PADDING + colIndex * CELL_WIDTH;
-          const y = TABLE_PADDING;
-          const isHighlighted = highlightedFields.includes(header);
+      <div className="sql-structure">
+        <h3>SQL结构</h3>
+        <div className="sql-structure-content">
+          <div className="sql-tables">
+            <h4>表</h4>
+            <ul>
+              {sqlVisualization.tables.map((table, index) => (
+                <li key={index}>{table}</li>
+              ))}
+            </ul>
+          </div>
           
-          return renderCell(
-            header,
-            x,
-            y,
-            CELL_WIDTH,
-            HEADER_HEIGHT,
-            true,
-            isHighlighted
-          );
-        })}
-        
-        {/* 渲染数据行 */}
-        {queryResults.map((row, rowIndex) => {
-          return headers.map((header, colIndex) => {
-            const x = TABLE_PADDING + colIndex * CELL_WIDTH;
-            const y = TABLE_PADDING + HEADER_HEIGHT + rowIndex * CELL_HEIGHT;
-            const isHighlighted = highlightedFields.includes(header);
-            
-            return renderCell(
-              row[header],
-              x,
-              y,
-              CELL_WIDTH,
-              CELL_HEIGHT,
-              false,
-              isHighlighted
-            );
-          });
-        })}
-      </Group>
+          {sqlVisualization.joins.length > 0 && (
+            <div className="sql-joins">
+              <h4>连接</h4>
+              <ul>
+                {sqlVisualization.joins.map((join, index) => (
+                  <li key={index}>{join.table} ON {join.condition}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {sqlVisualization.conditions.length > 0 && (
+            <div className="sql-conditions">
+              <h4>条件</h4>
+              <ul>
+                {sqlVisualization.conditions.map((condition, index) => (
+                  <li key={index}>{condition}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {sqlVisualization.orderBy && (
+            <div className="sql-order-by">
+              <h4>排序</h4>
+              <p>{sqlVisualization.orderBy}</p>
+            </div>
+          )}
+        </div>
+      </div>
     );
   };
   
   return (
     <div className="visualization">
-      <h2>数据可视化</h2>
-      <div className="chart-container">
-        <Stage width={stageSize.width} height={stageSize.height} ref={stageRef}>
-          <Layer>
-            {renderCanvasTable()}
-          </Layer>
-        </Stage>
+      <h2>SQL可视化</h2>
+      
+      {/* 可视化类型选择 */}
+      <div className="visualization-controls">
+        <select 
+          value={chartType} 
+          onChange={(e) => setChartType(e.target.value)}
+          className="chart-type-select"
+        >
+          <option value="bar">柱状图</option>
+          <option value="line">折线图</option>
+          <option value="pie">饼图</option>
+        </select>
       </div>
+      
+      {/* SQL结构可视化 */}
+      {renderSqlStructure()}
+      
+      {/* 数据可视化区域 */}
+      <div className="chart-container">
+        {renderChart()}
+      </div>
+      
       <div className="visualization-info">
-        <p>✨ 提示: 拖拽表格可调整位置</p>
+        <p>✨ 提示: 选择不同图表类型可以以不同方式可视化数据</p>
       </div>
     </div>
   );
