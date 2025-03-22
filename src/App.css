@@ -225,6 +225,83 @@ tr:nth-child(even) {
     border: 1px solid var(--border-color);
 }
 
+/* SQL结构可视化样式 */
+.sql-structure {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.sql-structure h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.sql-structure-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.sql-structure-content > div {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.sql-structure-content h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.sql-structure-content ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.sql-structure-content li {
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.sql-structure-content li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 高亮样式 */
+.highlight-select {
+    color: #66ccff;
+    font-weight: bold;
+}
+
+.highlight-select-item {
+    background-color: rgba(102, 204, 255, 0.2) !important;
+    border-left: 3px solid #66ccff;
+}
+
+.highlight-where {
+    color: #ffcc66;
+    font-weight: bold;
+}
+
+.highlight-where-item {
+    background-color: rgba(255, 204, 102, 0.2) !important;
+    border-left: 3px solid #ffcc66;
+}
+
+.cell-value {
+    font-weight: bold;
+    color: #ffcc66;
+}
+
 /* SQL动画相关样式 */
 .animation-btn {
     padding: 0.5rem 1rem;
@@ -257,6 +334,50 @@ tr:nth-child(even) {
     flex-wrap: wrap;
     align-items: center;
     margin-bottom: 1rem;
+    position: relative;
+}
+
+/* 颜色图例样式 */
+.color-legend {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.legend-title {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 0.5rem;
+}
+
+.select-color {
+    background-color: rgba(102, 204, 255, 0.8);
+}
+
+.where-color {
+    background-color: rgba(255, 204, 102, 0.8);
+}
+
+.table-color {
+    background-color: #ff6b6b;
 }
 
 .speed-controls {

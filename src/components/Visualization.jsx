@@ -5,7 +5,10 @@ const Visualization = ({ queryResults, selectedText }) => {
   const [sqlVisualization, setSqlVisualization] = useState({
     tables: [],
     joins: [],
-    conditions: []
+    conditions: [],
+    selectColumns: [],
+    whereCells: [],
+    orderBy: null
   });
   const [animationStep, setAnimationStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -164,15 +167,38 @@ const Visualization = ({ queryResults, selectedText }) => {
     }
   };
   
-  // 解析SQL语句，提取表、连接和条件信息
+  // 解析SQL语句，提取表、连接和条件信息以及不同层级的元素
   const updateSqlVisualization = () => {
     if (!selectedText) return;
     
     const sqlInfo = {
       tables: [],
       joins: [],
-      conditions: []
+      conditions: [],
+      selectColumns: [],
+      whereCells: [],
+      orderBy: null
     };
+    
+    // 提取SELECT部分的列
+    const selectRegex = /SELECT\s+(.+?)\s+FROM/i;
+    const selectMatch = selectedText.match(selectRegex);
+    
+    if (selectMatch && selectMatch[1]) {
+      const columnsStr = selectMatch[1].trim();
+      // 处理星号情况
+      if (columnsStr === '*') {
+        sqlInfo.selectColumns = ['*'];
+      } else {
+        // 分割多个列名，处理可能的别名和函数
+        sqlInfo.selectColumns = columnsStr.split(',').map(col => {
+          const trimmedCol = col.trim();
+          // 提取列名（可能包含表名前缀）
+          const colNameMatch = trimmedCol.match(/([\w\.]+)(?:\s+AS\s+[\w]+)?/i);
+          return colNameMatch ? colNameMatch[1].trim() : trimmedCol;
+        });
+      }
+    }
     
     // 提取表名
     const fromRegex = /FROM\s+([\w\s,]+)(?:\s+WHERE|\s+JOIN|\s+GROUP BY|\s+ORDER BY|\s+LIMIT|;|$)/i;
@@ -209,6 +235,19 @@ const Visualization = ({ queryResults, selectedText }) => {
       const conditionsStr = whereMatch[1].trim();
       // 简单分割条件（这里只处理AND连接的简单条件）
       sqlInfo.conditions = conditionsStr.split(/\s+AND\s+/i).map(c => c.trim());
+      
+      // 提取WHERE条件中的单元格值
+      sqlInfo.whereCells = [];
+      sqlInfo.conditions.forEach(condition => {
+        // 匹配形如 column = 'value' 或 column = "value" 或 column = 数字 的模式
+        const cellValueMatch = condition.match(/([\w\.]+)\s*=\s*['"]?([^'"\s;]+)['"]?/i);
+        if (cellValueMatch && cellValueMatch[2]) {
+          sqlInfo.whereCells.push({
+            column: cellValueMatch[1].trim(),
+            value: cellValueMatch[2].trim()
+          });
+        }
+      });
     }
     
     // 提取ORDER BY
@@ -228,6 +267,27 @@ const Visualization = ({ queryResults, selectedText }) => {
   const renderTable = (tableName, x, y, width, height, isHighlighted = false) => {
     const tableColor = isHighlighted ? '#ff6b6b' : '#4a5568';
     const textColor = '#ffffff';
+    
+    // 检查表中是否有被SELECT的列
+    const hasSelectedColumns = sqlVisualization.selectColumns.some(col => {
+      // 处理星号情况
+      if (col === '*') return true;
+      // 处理表名前缀情况
+      if (col.includes('.')) {
+        const [tablePrefix] = col.split('.');
+        return tablePrefix === tableName;
+      }
+      return false;
+    });
+    
+    // 检查表中是否有WHERE条件中的单元格
+    const hasWhereCells = sqlVisualization.whereCells.some(cell => {
+      if (cell.column.includes('.')) {
+        const [tablePrefix] = cell.column.split('.');
+        return tablePrefix === tableName;
+      }
+      return false;
+    });
     
     return (
       <Group key={tableName} x={x} y={y}>
@@ -256,17 +316,32 @@ const Visualization = ({ queryResults, selectedText }) => {
         {/* 表格数据行（动画步骤1以后显示） */}
         {animationStep >= 1 && (
           <Group y={40}>
-            {[...Array(3)].map((_, i) => (
-              <Rect
-                key={`row-${i}`}
-                width={width - 20}
-                height={12}
-                fill="rgba(255, 255, 255, 0.1)"
-                x={10}
-                y={i * 18}
-                cornerRadius={2}
-              />
-            ))}
+            {[...Array(3)].map((_, i) => {
+              // 为SELECT的列和WHERE条件中的单元格应用不同的高亮颜色
+              let rowColor = "rgba(255, 255, 255, 0.1)";
+              
+              // 第一行高亮SELECT的列
+              if (i === 0 && hasSelectedColumns && animationStep >= 1) {
+                rowColor = "rgba(102, 204, 255, 0.4)"; // 蓝色高亮SELECT的列
+              }
+              
+              // 第二行高亮WHERE条件中的单元格
+              if (i === 1 && hasWhereCells && animationStep >= 3) {
+                rowColor = "rgba(255, 204, 102, 0.4)"; // 黄色高亮WHERE条件中的单元格
+              }
+              
+              return (
+                <Rect
+                  key={`row-${i}`}
+                  width={width - 20}
+                  height={12}
+                  fill={rowColor}
+                  x={10}
+                  y={i * 18}
+                  cornerRadius={2}
+                />
+              );
+            })}
           </Group>
         )}
       </Group>
@@ -462,6 +537,19 @@ const Visualization = ({ queryResults, selectedText }) => {
       <div className="sql-structure">
         <h3>SQL结构</h3>
         <div className="sql-structure-content">
+          {/* SELECT部分 */}
+          {sqlVisualization.selectColumns.length > 0 && (
+            <div className="sql-select-columns">
+              <h4>SELECT <span className="highlight-select">列</span></h4>
+              <ul>
+                {sqlVisualization.selectColumns.map((column, index) => (
+                  <li key={index} className="highlight-select-item">{column}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* 表部分 */}
           <div className="sql-tables">
             <h4>表</h4>
             <ul>
@@ -471,6 +559,7 @@ const Visualization = ({ queryResults, selectedText }) => {
             </ul>
           </div>
           
+          {/* JOIN部分 */}
           {sqlVisualization.joins.length > 0 && (
             <div className="sql-joins">
               <h4>连接</h4>
@@ -482,6 +571,7 @@ const Visualization = ({ queryResults, selectedText }) => {
             </div>
           )}
           
+          {/* WHERE条件部分 */}
           {sqlVisualization.conditions.length > 0 && (
             <div className="sql-conditions">
               <h4>条件</h4>
@@ -493,6 +583,21 @@ const Visualization = ({ queryResults, selectedText }) => {
             </div>
           )}
 
+          {/* WHERE条件中的单元格值 */}
+          {sqlVisualization.whereCells.length > 0 && (
+            <div className="sql-where-cells">
+              <h4>WHERE <span className="highlight-where">单元格</span></h4>
+              <ul>
+                {sqlVisualization.whereCells.map((cell, index) => (
+                  <li key={index} className="highlight-where-item">
+                    {cell.column} = <span className="cell-value">{cell.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* ORDER BY部分 */}
           {sqlVisualization.orderBy && (
             <div className="sql-order-by">
               <h4>排序</h4>
@@ -561,6 +666,23 @@ const Visualization = ({ queryResults, selectedText }) => {
             </div>
           </>
         )}
+        
+        {/* 颜色图例说明 */}
+        <div className="color-legend">
+          <div className="legend-title">SQL元素颜色说明：</div>
+          <div className="legend-item">
+            <span className="legend-color select-color"></span>
+            <span className="legend-text">SELECT列</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-color where-color"></span>
+            <span className="legend-text">WHERE单元格</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-color table-color"></span>
+            <span className="legend-text">表</span>
+          </div>
+        </div>
       </div>
       
       {/* 动画状态显示 */}
@@ -587,8 +709,8 @@ const Visualization = ({ queryResults, selectedText }) => {
       {/* SQL结构信息 */}
       {renderSqlStructure()}
     </div>
-)
-
+  );
 }
+
 
 export default Visualization;
