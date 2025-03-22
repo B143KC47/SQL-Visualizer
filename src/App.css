@@ -214,21 +214,15 @@ tr:nth-child(even) {
 }
 
 /* 可视化区域样式 */
-.chart-container {
+.canvas-container {
     width: 100%;
-    height: 300px;
+    height: 400px;
     margin-top: 1rem;
     position: relative;
     overflow: hidden;
-}
-
-.chart-type-select {
-    padding: 0.5rem;
-    border-radius: 4px;
-    background-color: var(--bg-input);
-    color: var(--text-color);
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    margin-right: 0.5rem;
 }
 
 /* SQL动画相关样式 */
@@ -241,6 +235,8 @@ tr:nth-child(even) {
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s ease;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .animation-btn:hover {
@@ -254,6 +250,35 @@ tr:nth-child(even) {
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+
+.visualization-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.speed-controls {
+    display: flex;
+    margin-left: auto;
+}
+
+.speed-btn {
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.speed-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
 }
 
 .animation-status {
