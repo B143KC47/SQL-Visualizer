@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
-import { EditorSelection } from '@codemirror/state';
 
-const SQLEditor = ({ onQueryResult, onSelectionChange }) => {
-  const [sqlQuery, setSqlQuery] = useState('SELECT * FROM users JOIN orders ON users.id = orders.user_id;');
-  
-  // 模拟查询结果数据
+const SQLEditor = ({ initialSql, onQueryResult, onSelectionChange }) => {
+  const [sqlQuery, setSqlQuery] = useState(initialSql || 'SELECT * FROM users;');
+
+  // 当 initialSql prop 改变时，更新编辑器的内容，并通知父组件
+  useEffect(() => {
+    if (initialSql) {
+      setSqlQuery(initialSql);
+      if (onSelectionChange) {
+        // 确保 Visualization 组件在初始加载时能获取到 SQL
+        onSelectionChange(initialSql);
+      }
+    }
+  }, [initialSql, onSelectionChange]); // 依赖于 initialSql 和 onSelectionChange
+
   const mockQueryResults = [
     {
       id: 1,
@@ -39,32 +48,39 @@ const SQLEditor = ({ onQueryResult, onSelectionChange }) => {
 
   const executeQuery = () => {
     console.log('执行SQL查询:', sqlQuery);
-    
-    // 在实际应用中，这里应该发送查询到后端
-    // 为了演示，我们使用模拟数据
     if (onQueryResult) {
       onQueryResult(mockQueryResults);
     }
-    
-    // 显示执行成功消息
+    // 确保当“运行查询”被点击时，Visualization组件总是能获取到编辑器当前的SQL内容。
+    if (onSelectionChange) {
+        onSelectionChange(sqlQuery);
+    }
     alert('查询已执行！在实际应用中，这里会发送查询到后端并显示结果。');
   };
 
-  const onChange = React.useCallback((value) => {
+  const onChange = useCallback((value) => {
     setSqlQuery(value);
-  }, []);
+    // 实时将编辑器内容同步给父组件，以便Visualization可以实时更新
+    // 如果不希望实时更新，可以只在失去焦点或特定操作时调用
+    if (onSelectionChange) {
+      onSelectionChange(value);
+    }
+  }, [onSelectionChange]);
   
-  // 处理编辑器中的选择事件
-  const handleSelectionChange = React.useCallback((viewUpdate) => {
+  // handleSelectionChange 现在主要用于显式选择文本的场景
+  // 编辑器内容的整体更改由 onChange 处理
+  const handleEditorUpdate = useCallback((viewUpdate) => {
     if (viewUpdate.selectionSet) {
       const selection = viewUpdate.state.selection.main;
       if (!selection.empty) {
-        const selectedText = viewUpdate.state.sliceDoc(selection.from, selection.to);
-        console.log('选中的文本:', selectedText);
+        const selectedTextValue = viewUpdate.state.sliceDoc(selection.from, selection.to);
+        // console.log('SQLEditor 显式选中的文本:', selectedTextValue);
+        // 如果用户显式选择了一段文本，我们优先使用这段文本
         if (onSelectionChange) {
-          onSelectionChange(selectedText);
+          onSelectionChange(selectedTextValue);
         }
       }
+      // 如果选择为空，onChange 已经处理了整个编辑器内容的传递
     }
   }, [onSelectionChange]);
 
@@ -76,9 +92,9 @@ const SQLEditor = ({ onQueryResult, onSelectionChange }) => {
           value={sqlQuery}
           height="150px"
           extensions={[sql()]}
-          onChange={onChange}
+          onChange={onChange} // 编辑器内容变化时更新 sqlQuery 状态并通知父组件
           theme="dark"
-          onUpdate={handleSelectionChange}
+          onUpdate={handleEditorUpdate} // 编辑器选择或状态更新时触发
         />
         <button onClick={executeQuery} className="btn">运行查询</button>
       </div>

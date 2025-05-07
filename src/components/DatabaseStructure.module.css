@@ -1,0 +1,45 @@
+.dbStructure {
+    margin-top: 0.8rem;
+}
+
+.dbName, .tableName {
+    cursor: pointer;
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.dbName:hover, .tableName:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-warm);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tableList {
+    list-style: none;
+    padding-left: 1rem;
+    margin-top: 0.6rem;
+}
+
+.columnList {
+    list-style: none;
+    padding-left: 1rem;
+    margin-top: 0.6rem;
+}
+
+.columnList li {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    border-left: 2px solid var(--border-color);
+    margin-bottom: 0.2rem;
+    transition: all 0.2s ease;
+}
+
+.columnList li:hover {
+    border-left-color: var(--accent-warm);
+    background-color: rgba(255, 255, 255, 0.03);
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from './DatabaseStructure.module.css'; // Import CSS module
 
 const DatabaseStructure = ({ onTableClick }) => {
   const [isTableListVisible, setIsTableListVisible] = useState(true);
@@ -49,19 +50,19 @@ const DatabaseStructure = ({ onTableClick }) => {
   };
 
   return (
-    <div className="sidebar">
-      <h2>数据结构</h2>
-      <div className="db-structure">
-        <div className="db-item">
-          <div className="db-name" onClick={toggleTableList}>
+    <div className="sidebar"> {/* Keep 'sidebar' for App.css grid layout */}
+      <h2>数据结构</h2> {/* Global h2 style from App.css */}
+      <div className={styles.dbStructure}> {/* Use styles.dbStructure */}
+        <div className={styles.dbItem}> {/* Use styles.dbItem */}
+          <div className={styles.dbName} onClick={toggleTableList}> {/* Use styles.dbName */}
             {dbStructure.name}
           </div>
           {isTableListVisible && (
-            <ul className="table-list">
+            <ul className={styles.tableList}> {/* Use styles.tableList */}
               {dbStructure.tables.map((table, index) => (
-                <li className="table-item" key={index}>
-                  <div 
-                    className="table-name" 
+                <li className={styles.tableItem} key={index}> {/* Use styles.tableItem */}
+                  <div
+                    className={styles.tableName} // Use styles.tableName
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleColumnList(index);
@@ -71,8 +72,9 @@ const DatabaseStructure = ({ onTableClick }) => {
                     {table.name} ({table.code})
                   </div>
                   {expandedTables[index] && (
-                    <ul className="column-list">
+                    <ul className={styles.columnList}> {/* Use styles.columnList */}
                       {table.columns.map((column, colIndex) => (
+                        // li elements under columnList are styled by .columnList li in the CSS module
                         <li key={colIndex}>
                           {column.name} ({column.type}
                           {column.isPrimary && ', PK'}
