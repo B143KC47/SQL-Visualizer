@@ -1,36 +1,12 @@
 import React, { useState } from 'react';
-import styles from './DatabaseStructure.module.css'; // Import CSS module
+import styles from './DatabaseStructure.module.css';
 
-const DatabaseStructure = ({ onTableClick }) => {
+const DatabaseStructure = ({ schema, onTableClick }) => { // Accept schema as a prop
   const [isTableListVisible, setIsTableListVisible] = useState(true);
   const [expandedTables, setExpandedTables] = useState({});
 
-  // 模拟数据库结构数据
-  const dbStructure = {
-    name: '示例数据库',
-    tables: [
-      {
-        name: '用户表',
-        code: 'users',
-        columns: [
-          { name: 'id', type: 'INT', isPrimary: true },
-          { name: 'username', type: 'VARCHAR' },
-          { name: 'email', type: 'VARCHAR' },
-          { name: 'created_at', type: 'DATETIME' }
-        ]
-      },
-      {
-        name: '订单表',
-        code: 'orders',
-        columns: [
-          { name: 'id', type: 'INT', isPrimary: true },
-          { name: 'user_id', type: 'INT', isForeign: true },
-          { name: 'amount', type: 'DECIMAL' },
-          { name: 'order_date', type: 'DATETIME' }
-        ]
-      }
-    ]
-  };
+  // Use the passed schema prop instead of the hardcoded one
+  const dbStructure = schema;
 
   const toggleTableList = () => {
     setIsTableListVisible(!isTableListVisible);
@@ -49,20 +25,32 @@ const DatabaseStructure = ({ onTableClick }) => {
     }
   };
 
+  // Handle cases where schema might be loading or not yet defined
+  if (!dbStructure || !dbStructure.name) {
+    return (
+      <div className="sidebar">
+        <h2>数据结构</h2>
+        <div className={styles.dbStructure}>
+          <p className={styles.emptyMessage}>请先导入数据库结构文件。</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="sidebar"> {/* Keep 'sidebar' for App.css grid layout */}
-      <h2>数据结构</h2> {/* Global h2 style from App.css */}
-      <div className={styles.dbStructure}> {/* Use styles.dbStructure */}
-        <div className={styles.dbItem}> {/* Use styles.dbItem */}
-          <div className={styles.dbName} onClick={toggleTableList}> {/* Use styles.dbName */}
+    <div className="sidebar"> 
+      <h2>数据结构</h2> 
+      <div className={styles.dbStructure}> 
+        <div className={styles.dbItem}> 
+          <div className={styles.dbName} onClick={toggleTableList}> 
             {dbStructure.name}
           </div>
-          {isTableListVisible && (
-            <ul className={styles.tableList}> {/* Use styles.tableList */}
+          {isTableListVisible && dbStructure.tables && dbStructure.tables.length > 0 && (
+            <ul className={styles.tableList}> 
               {dbStructure.tables.map((table, index) => (
-                <li className={styles.tableItem} key={index}> {/* Use styles.tableItem */}
+                <li className={styles.tableItem} key={table.code || index}> {/* Use table.code for key if available */}
                   <div
-                    className={styles.tableName} // Use styles.tableName
+                    className={styles.tableName}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleColumnList(index);
@@ -71,11 +59,10 @@ const DatabaseStructure = ({ onTableClick }) => {
                   >
                     {table.name} ({table.code})
                   </div>
-                  {expandedTables[index] && (
-                    <ul className={styles.columnList}> {/* Use styles.columnList */}
+                  {expandedTables[index] && table.columns && table.columns.length > 0 && (
+                    <ul className={styles.columnList}> 
                       {table.columns.map((column, colIndex) => (
-                        // li elements under columnList are styled by .columnList li in the CSS module
-                        <li key={colIndex}>
+                        <li key={column.name || colIndex}> {/* Use column.name for key if available */}
                           {column.name} ({column.type}
                           {column.isPrimary && ', PK'}
                           {column.isForeign && ', FK'})
@@ -86,6 +73,9 @@ const DatabaseStructure = ({ onTableClick }) => {
                 </li>
               ))}
             </ul>
+          )}
+          {isTableListVisible && (!dbStructure.tables || dbStructure.tables.length === 0) && (
+            <p className={styles.emptyMessage}>此数据库中没有表。</p>
           )}
         </div>
       </div>

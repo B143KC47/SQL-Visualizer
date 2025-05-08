@@ -1,0 +1,57 @@
+/* Styles for SQLEditor component - specifically for the editor part */
+
+.sqlEditorContainer {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+/* 为 CodeMirror 编辑器添加直角边框 */
+.editorWrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+}
+
+.codeEditor {
+    height: 100%;
+    flex-grow: 1;
+}
+
+/* 覆盖CodeMirror默认高度 */
+.codeEditor > div {
+    height: 100% !important;
+    flex-grow: 1;
+}
+
+/* 运行查询按钮样式，可选用代替全局 .btn */
+.runQueryButton {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 0.5rem;
+    transition: all 0.15s ease;
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
+    align-self: flex-start;
+}
+
+.runQueryButton:hover {
+    background-color: var(--accent-secondary);
+}
+
+.runQueryButton:active {
+    transform: translateY(1px);
+}

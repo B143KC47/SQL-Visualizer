@@ -1,43 +1,95 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import './App.css'
 import { DatabaseStructure, SQLEditor, Visualization } from './components'
+import QueryResultDisplay from './components/QueryResultDisplay';
 
-// 使用更完整的SQL查询进行测试，包含多种字句
-const INITIAL_SQL_QUERY = 'SELECT users.id, users.username, orders.order_id, orders.amount FROM users JOIN orders ON users.id = orders.user_id WHERE users.id = 1 GROUP BY users.username, users.id, orders.order_id, orders.amount HAVING COUNT(orders.id) > 0 ORDER BY users.created_at DESC;';
+const INITIAL_SQL_QUERY = 'SELECT id, username FROM users;';
+
+const DEFAULT_SCHEMA = {
+  name: "未加载数据库",
+  tables: []
+};
 
 function App() {
   const [queryResults, setQueryResults] = useState([]);
-  // App组件控制selectedText的初始值和当前值
   const [selectedText, setSelectedText] = useState(INITIAL_SQL_QUERY);
+  const [databaseSchema, setDatabaseSchema] = useState(DEFAULT_SCHEMA);
+  const [fileName, setFileName] = useState('');
 
-  const handleTableClick = (tableName) => {
+  const handleTableClick = useCallback((tableName) => {
     console.log('选中表:', tableName);
-    // 示例：可以考虑更新查询，例如:
-    // const newQuery = `SELECT * FROM ${tableName};`;
-    // setSelectedText(newQuery); // 这会触发SQLEditor和Visualization的更新
-  };
+    const newQuery = `SELECT * FROM ${tableName};`;
+    setSelectedText(newQuery);
+  }, []);
 
   const handleQueryResult = (results) => {
-    console.log('查询结果:', results);
+    console.log('App received query results:', results);
     setQueryResults(results);
   };
 
-  // 当SQLEditor中的选择发生变化或内容被程序化更改时，更新App的selectedText
-  const handleSelectionChange = (text) => {
+  const handleSelectionChange = useCallback((text) => {
     console.log('App接收到选中的SQL文本:', text);
     setSelectedText(text);
+  }, []);
+
+  const handleSchemaImport = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedSchema = JSON.parse(e.target.result);
+          if (importedSchema && importedSchema.name && Array.isArray(importedSchema.tables)) {
+            setDatabaseSchema(importedSchema);
+            setSelectedText(`-- 已加载数据库: '${importedSchema.name}'
+-- 请选择一个表或编写查询`);
+            setQueryResults([]);
+          } else {
+            alert('导入的JSON文件格式不正确。请确保包含 "name" 和 "tables" 数组。');
+          }
+        } catch (error) {
+          console.error("导入JSON失败:", error);
+          alert('导入JSON失败: ' + error.message);
+        }
+      };
+      reader.onerror = (error) => {
+        console.error("读取文件失败:", error);
+        alert('读取文件失败: ' + error.message);
+      };
+      reader.readAsText(file);
+    }
   };
 
   return (
     <div className="app-container">
+      <header className="app-header">
+        <h1 style={{ margin: 0, fontSize: '1.2rem', marginRight: '1.5rem', flexShrink: 0 }}>SQL 可视化工具</h1>
+        <input 
+          type="file" 
+          id="fileInput" 
+          accept=".json" 
+          onChange={handleSchemaImport} 
+          style={{ display: 'none' }} 
+        />
+        <label htmlFor="fileInput" className="file-input-label">
+          导入数据结构
+        </label>
+        <span className="file-input-text">
+          {fileName ? `已加载: ${fileName}` : '选择一个 JSON 格式的数据库结构文件进行导入'}
+        </span>
+      </header>
       <main>
         <div className="container">
-          <DatabaseStructure onTableClick={handleTableClick} />
+          <DatabaseStructure schema={databaseSchema} onTableClick={handleTableClick} />
           <SQLEditor
-            initialSql={INITIAL_SQL_QUERY} // 将初始SQL传递给SQLEditor
+            initialSql={INITIAL_SQL_QUERY}
             onQueryResult={handleQueryResult}
-            onSelectionChange={handleSelectionChange} // 当编辑器选择或内容改变时，通知App
+            onSelectionChange={handleSelectionChange}
           />
+          <div className="query-result-display-wrapper">
+            <QueryResultDisplay results={queryResults} />
+          </div>
           <Visualization queryResults={queryResults} selectedText={selectedText} />
         </div>
       </main>

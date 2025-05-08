@@ -1,34 +1,52 @@
 .dbStructure {
     margin-top: 0.8rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.dbItem {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.emptyMessage {
+    padding: 1rem;
+    color: var(--text-secondary);
+    background-color: rgba(0, 0, 0, 0.2);
+    border-left: 3px solid var(--border-color);
+    margin: 0.5rem 0;
 }
 
 .dbName, .tableName {
     cursor: pointer;
     padding: 0.6rem 0.8rem;
-    border-radius: 6px;
+    border-radius: 0; /* 直角设计 */
     margin-bottom: 0.6rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
+    background-color: rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    border-left: 3px solid transparent;
 }
 
 .dbName:hover, .tableName:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: var(--accent-warm);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-left-color: var(--accent-primary);
 }
 
 .tableList {
     list-style: none;
     padding-left: 1rem;
     margin-top: 0.6rem;
+    margin-bottom: 0;
 }
 
 .columnList {
     list-style: none;
     padding-left: 1rem;
     margin-top: 0.6rem;
+    margin-bottom: 0;
 }
 
 .columnList li {
@@ -36,10 +54,10 @@
     font-size: 0.85rem;
     border-left: 2px solid var(--border-color);
     margin-bottom: 0.2rem;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .columnList li:hover {
-    border-left-color: var(--accent-warm);
-    background-color: rgba(255, 255, 255, 0.03);
+    border-left-color: var(--accent-primary);
+    background-color: rgba(0, 0, 0, 0.2);
 }

@@ -1,0 +1,76 @@
+/* Styles for QueryResultDisplay component */
+.queryResultWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.noResultsText {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    background-color: rgba(0, 0, 0, 0.2);
+    margin: 1rem 0;
+    padding: 2rem;
+    border-left: 3px solid var(--border-color);
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.queryResultTableContainer {
+    overflow: auto; /* 允许双向滚动 */
+    border-radius: 0; /* 直角设计 */
+    background-color: rgba(0, 0, 0, 0.2);
+    flex-grow: 1;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.resultTable {
+    width: 100%;
+    border-collapse: collapse; /* 使用collapse代替separate，直角设计 */
+    border-spacing: 0;
+    margin-top: 0; /* Table is now directly inside its container */
+}
+
+.resultTable th,
+.resultTable td {
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.resultTable th {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: var(--accent-primary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10; /* Ensure headers are above scrolling content */
+    border-bottom: 2px solid var(--accent-primary);
+}
+
+/* 移除圆角设计 */
+.resultTable th:first-child,
+.resultTable th:last-child {
+    border-radius: 0;
+}
+
+/* Remove border from last row of cells if table has an outer border or rounded corners */
+.resultTable tr:last-child td {
+    border-bottom: 0;
+}
+
+.resultTable tr:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.resultTable tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.1);
+}

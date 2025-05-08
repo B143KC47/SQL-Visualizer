@@ -1,183 +1,145 @@
-/* 全局变量 */
+/* 全局变量 - 修改为直角简洁设计 */
 :root {
-    --accent-warm: #ff6b6b;
-    --accent-light: #ffb8b8;
-    --bg-dark: #121212;
-    --bg-card: rgba(30, 30, 30, 0.7);
-    --text-primary: rgba(255, 255, 255, 0.87);
-    --text-secondary: rgba(255, 255, 255, 0.6);
+    --accent-primary: #2c7be5;     /* 主强调色 */
+    --accent-secondary: #1a68d1;   /* 次强调色 */
+    --bg-dark: #121212;            /* 深色背景 */
+    --bg-card: rgba(30, 30, 30, 0.9); /* 卡片背景 */
+    --text-primary: rgba(255, 255, 255, 0.9);
+    --text-secondary: rgba(255, 255, 255, 0.7);
     --sidebar-width: 250px;
-    --border-color: rgba(255, 255, 255, 0.08);
-    --glass-effect: blur(10px);
-    --card-radius: 8px; /* 减少圆角以更接近直角，但保留一些平滑感 */
-    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); /* 调整阴影 */
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-accent: rgba(44, 123, 229, 0.5);
+    --card-radius: 0px;            /* 直角设计 */
+    --card-shadow: none;           /* 移除阴影 */
+    --header-height: 48px;         /* 标题栏高度 */
 }
 
-/* 标题样式 */
+/* 标题样式 - 使用直角简洁设计 */
 h1, h2 {
-    margin-bottom: 1rem; /* 减少标题下方间距 */
-    background: linear-gradient(45deg, var(--accent-warm), var(--accent-light));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--accent-primary);  /* 使用纯色而非渐变 */
+    display: block;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border-left: 3px solid var(--accent-primary);
+    padding-left: 0.75rem;
 }
 
 h1 {
-    font-size: 2rem; /* 调整字体大小 */
+    font-size: 1.8rem;
 }
 
 h2 {
-    font-size: 1.4rem; /* 调整字体大小 */
-    font-weight: 600;
-    margin-bottom: 0.8rem; /* 减少标题下方间距 */
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
 }
 
 /* 主布局 */
 .app-container {
     background-color: var(--bg-dark);
-    background-image: url('./assets/pattern.svg');
-    background-size: cover;
-    background-position: center;
+    background-image: none;  /* 移除背景图案以保持简洁 */
     min-height: 100vh;
+    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* 防止内容溢出 */
 }
 
 main {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    flex-grow: 1;
+    height: calc(100vh - var(--header-height));
     overflow: hidden;
-    padding: 1rem; /* 减少主区域内边距 */
+    padding: 0.75rem;
 }
 
 .container {
     display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr 1fr;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: auto 1fr; /* 让第一行根据内容自适应，第二行占据剩余空间 */
     grid-template-areas: 
         "sidebar editor visualization"
         "sidebar results visualization";
     height: 100%;
-    gap: 0.8rem; /* 减少网格间隙 */
+    gap: 0.75rem;
     background-color: transparent;
 }
 
-/* 组件样式 */
-.sidebar, .main-content, .query-result-container, .visualization {
+/* 公共卡片组件样式 */
+.sidebar, 
+.main-content, 
+.visualization,
+.query-result-display-wrapper { /* Added new wrapper, removed .query-result-container from this rule */
     background-color: var(--bg-card);
-    backdrop-filter: var(--glass-effect);
-    -webkit-backdrop-filter: var(--glass-effect);
-    padding: 1rem; /* 统一并减少内边距 */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 0.75rem;
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
     border: 1px solid var(--border-color);
     display: flex; /* 添加flex以便更好地控制内部元素 */
     flex-direction: column; /* 默认为列方向 */
+    overflow: hidden; /* Prevent content from breaking card boundaries */
 }
 
 .sidebar {
     grid-area: sidebar;
-    overflow-y: auto;
+    overflow-y: auto; /* Allow sidebar content to scroll if needed */
 }
 
-.main-content {
+.main-content { /* This is the root of SQLEditor */
     grid-area: editor;
-    /* SQLEditor 和 QueryResult 在 main-content 内部，main-content 本身不再是 grid area */
+    max-height: 250px; /* 限制编辑器区域高度 */
+    min-height: 200px; /* 确保编辑器区域有最小高度 */
 }
 
-.sql-editor-container {
-    margin-bottom: 0.8rem; /* 减少编辑器和结果之间的间距 */
-    flex-shrink: 0; /* 防止编辑器被压缩 */
-}
-
-.query-result-container {
+/* Styles for the wrapper of QueryResultDisplay component */
+.query-result-display-wrapper {
     grid-area: results;
-    overflow-y: auto;
-    flex-grow: 1; /* 允许结果区域扩展 */
+    flex-grow: 1;
+    /* Common card styles are applied above. Specific overflow for results content is in its module. */
 }
 
 .visualization {
     grid-area: visualization;
     overflow: hidden; /* 防止Konva内容溢出导致滚动条 */
+    display: flex;
+    flex-direction: column;
 }
 
 /* 查询结果表格样式 */
 .query-result {
     overflow-x: auto;
-    border-radius: 6px; /* 调整圆角 */
+    border-radius: var(--card-radius); /* 调整圆角 */
     background-color: rgba(0, 0, 0, 0.2);
     flex-grow: 1; /* 允许表格内容区域扩展 */
     display: flex; /* 确保表格能正确填充 */
 }
 
-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 0.8rem; /* 调整表格上边距 */
-}
+/* Styles for .query-result, table, th, td etc. have been moved to QueryResultDisplay.module.css */
 
-th, td {
-    padding: 0.6rem 0.8rem; /* 调整单元格内边距 */
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    white-space: nowrap; /* 防止内容换行 */
-}
-
-th {
-    background-color: rgba(0, 0, 0, 0.3);
-    color: var(--accent-light);
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-th:first-child {
-    border-top-left-radius: 6px; /* 调整圆角 */
-}
-
-th:last-child {
-    border-top-right-radius: 6px; /* 调整圆角 */
-}
-
-tr:last-child td { /* 移除对 first-child 和 last-child 的特定圆角，避免复杂性 */
-    border-bottom: 0; /* 最后一行单元格无下边框，如果表格有外边框的话 */
-}
-/* 如果希望最后一行单元格有圆角，需要更复杂的选择器或JS处理，或者给table本身加overflow:hidden和border-radius */
-
-
-tr:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.02);
-}
-
-
-/* 新的 Konva Stage 包装器样式 */
+/* Konva Stage 包装器样式 */
 .konva-stage-wrapper {
     width: 100%;
     flex-grow: 1; /* 使其填充.visualization区域 */
     min-height: 300px; /* 减少最小高度，使其更灵活 */
     position: relative;
     overflow: hidden; /* 确保Konva内容不溢出 */
-    background-color: rgba(0, 0, 0, 0.15); /* 略微调整背景色 */
+    background-color: rgba(0, 0, 0, 0.2); /* 略微调整背景色 */
     border: 1px solid var(--border-color);
     margin-top: 0; /* 移除上边距，使其紧贴控件 */
-    border-radius: 4px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
 }
 
 /* SQL结构可视化样式 (在Visualization组件底部) */
 .sql-structure {
     margin-top: 0.8rem; /* 调整上边距 */
-    padding: 0.8rem;
-    background-color: rgba(0, 0, 0, 0.1); /* 调整背景色 */
+    padding: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.2); /* 调整背景色 */
     border: 1px solid var(--border-color);
-    border-radius: 4px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
     font-size: 0.9rem; /* 调整基础字体大小 */
     overflow-y: auto; /* 如果内容过多则滚动 */
     max-height: 200px; /* 限制最大高度 */
@@ -187,25 +149,29 @@ tr:nth-child(even) {
     margin-top: 0;
     margin-bottom: 0.6rem;
     font-size: 1.1rem;
+    color: var(--text-primary);
+    border-left: 2px solid var(--accent-primary);
+    padding-left: 0.5rem;
 }
 
 .sql-structure-content {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* 调整列宽 */
-    gap: 0.4rem; /* 调整间隙 */
+    gap: 0.5rem; /* 调整间隙 */
 }
 
 .sql-structure-content > div {
-    background-color: rgba(0, 0, 0, 0.2); /* 调整背景色 */
+    background-color: rgba(0, 0, 0, 0.15); /* 调整背景色 */
     padding: 0.6rem;
     border: 1px solid var(--border-color);
-    border-radius: 3px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
 }
 
 .sql-structure-content h4 {
     margin-top: 0;
     margin-bottom: 0.4rem;
     font-size: 0.95rem;
+    color: var(--text-primary);
 }
 
 .sql-structure-content ul {
@@ -218,39 +184,41 @@ tr:nth-child(even) {
     padding: 0.25rem 0.4rem;
     margin-bottom: 0.15rem;
     background-color: rgba(255, 255, 255, 0.04);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     font-size: 0.8rem;
-    border-radius: 2px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
+    border-left: 2px solid transparent;
 }
 
 .sql-structure-content li:hover {
     background-color: rgba(255, 255, 255, 0.08);
+    border-left-color: var(--accent-primary);
 }
 
 /* 高亮样式 */
 .highlight-select {
-    color: #66ccff;
+    color: #4da3ff;
     font-weight: bold;
 }
 
 .highlight-select-item {
-    background-color: rgba(102, 204, 255, 0.2) !important;
-    border-left: 3px solid #66ccff;
+    background-color: rgba(77, 163, 255, 0.1) !important;
+    border-left: 2px solid #4da3ff !important;
 }
 
 .highlight-where {
-    color: #ffcc66;
+    color: #ffb84d;
     font-weight: bold;
 }
 
 .highlight-where-item {
-    background-color: rgba(255, 204, 102, 0.2) !important;
-    border-left: 3px solid #ffcc66;
+    background-color: rgba(255, 184, 77, 0.1) !important;
+    border-left: 2px solid #ffb84d !important;
 }
 
 .cell-value {
     font-weight: bold;
-    color: #ffcc66;
+    color: #ffb84d;
 }
 
 /* SQL动画相关样式 */
@@ -258,55 +226,16 @@ tr:nth-child(even) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    margin-bottom: 0.8rem; /* 调整下方间距 */
-    transition: all 0.2s ease;
-    font-size: 0.8rem;
-    border-radius: 2px; /* 轻微圆角 */
-}
-
-.sql-structure-content li:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-/* 高亮样式 */
-.highlight-select {
-    color: #66ccff;
-    font-weight: bold;
-}
-
-.highlight-select-item {
-    background-color: rgba(102, 204, 255, 0.2) !important;
-    border-left: 3px solid #66ccff;
-}
-
-.highlight-where {
-    color: #ffcc66;
-    font-weight: bold;
-}
-
-.highlight-where-item {
-    background-color: rgba(255, 204, 102, 0.2) !important;
-    border-left: 3px solid #ffcc66;
-}
-
-.cell-value {
-    font-weight: bold;
-    color: #ffcc66;
-}
-
-/* SQL动画相关样式 */
-.visualization-controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-bottom: 0.8rem; /* 调整下方间距 */
-    position: relative;
+    margin-bottom: 0.75rem; /* 调整下方间距 */
+    position: relative; /* For legend positioning */
     flex-shrink: 0; /* 防止被压缩 */
+    min-height: 40px; /* Ensure space for legend even if other controls are removed */
 }
 
+/* .animation-btn styles remain if used by other components or globally, otherwise move to Visualization.module.css if specific */
 .animation-btn {
     padding: 0.5rem 0.9rem; /* 调整内边距 */
-    background-color: var(--accent-warm); /* 使用全局变量 */
+    background-color: var(--accent-primary); /* 使用全局变量 */
     color: white;
     border: none;
     cursor: pointer;
@@ -314,13 +243,11 @@ tr:nth-child(even) {
     transition: all 0.2s ease; /* 调整过渡 */
     margin-right: 0.4rem;
     margin-bottom: 0.4rem;
-    border-radius: 4px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
 }
 
 .animation-btn:hover {
-    background-color: #ff5252;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(255, 107, 107, 0.25);
+    background-color: var(--accent-secondary);
 }
 
 .animation-btn:disabled {
@@ -331,17 +258,16 @@ tr:nth-child(even) {
     box-shadow: none;
 }
 
-
 /* 颜色图例样式 */
 .color-legend {
     position: absolute;
     right: 0;
     top: 0;
-    background-color: rgba(0, 0, 0, 0.6); /* 调整背景透明度 */
+    background-color: rgba(0, 0, 0, 0.75); /* 调整背景透明度 */
     padding: 0.5rem; /* 调整内边距 */
     border: 1px solid var(--border-color);
     font-size: 0.75rem; /* 调整字体大小 */
-    border-radius: 4px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
     z-index: 20; /* 确保在其他控件之上 */
 }
 
@@ -365,15 +291,15 @@ tr:nth-child(even) {
 }
 
 .select-color {
-    background-color: rgba(102, 204, 255, 0.8);
+    background-color: #4da3ff;
 }
 
 .where-color {
-    background-color: rgba(255, 204, 102, 0.8);
+    background-color: #ffb84d;
 }
 
 .table-color {
-    background-color: #ff6b6b;
+    background-color: var(--accent-primary);
 }
 
 .speed-controls {
@@ -390,7 +316,7 @@ tr:nth-child(even) {
     font-size: 0.75rem; /* 调整字体大小 */
     margin-left: 0.4rem;
     transition: all 0.2s ease;
-    border-radius: 3px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
 }
 
 .speed-btn:hover {
@@ -399,11 +325,11 @@ tr:nth-child(even) {
 }
 
 .animation-status {
-    margin: 0.8rem 0; /* 调整外边距 */
-    padding: 0.8rem;
-    background-color: rgba(255, 255, 255, 0.04); /* 调整背景色 */
+    margin: 0.75rem 0; /* 调整外边距 */
+    padding: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.2); /* 调整背景色 */
     border: 1px solid var(--border-color);
-    border-radius: 4px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
     flex-shrink: 0; /* 防止被压缩 */
 }
 
@@ -415,22 +341,22 @@ tr:nth-child(even) {
 
 .animation-step-indicator .step {
     padding: 0.3rem 0.5rem; /* 调整内边距 */
-    background-color: rgba(255, 255, 255, 0.08); /* 调整背景色 */
+    background-color: rgba(0, 0, 0, 0.3); /* 调整背景色 */
     color: var(--text-secondary); /* 调整文字颜色 */
     flex: 1;
     text-align: center;
-    margin: 0 0.2rem; /* 调整间距 */
+    margin: 0 0.1rem; /* 调整间距 */
     transition: all 0.3s ease;
     font-size: 0.8rem; /* 调整字体大小 */
-    border-radius: 3px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
 }
 
 .animation-step-indicator .step.active {
-    background-color: var(--accent-warm);
+    background-color: var(--accent-primary);
     color: white;
     font-weight: bold;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(255, 107, 107, 0.25);
+    border: none;
+    box-shadow: none;
 }
 
 .animation-description {
@@ -443,24 +369,63 @@ tr:nth-child(even) {
 
 /* 按钮样式 (通用 .btn) */
 .btn {
-    background: linear-gradient(45deg, var(--accent-warm), var(--accent-light));
-    color: #000; /* 深色文字以确保对比度 */
+    background-color: var(--accent-primary);
+    color: white;
     border: none;
     padding: 0.6rem 1.1rem; /* 调整内边距 */
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 500;
     margin-top: 0.8rem; /* 调整上边距 */
     transition: all 0.2s ease;
-    box-shadow: 0 3px 10px rgba(255, 107, 107, 0.25); /* 调整阴影 */
-    border-radius: 4px; /* 轻微圆角 */
+    border-radius: var(--card-radius); /* 轻微圆角 */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
 }
 
 .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
+    background-color: var(--accent-secondary);
 }
 
 .btn:active {
-    transform: translateY(0px); /* 调整激活效果 */
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+    transform: translateY(1px);
+}
+
+/* 应用标题栏样式 */
+.app-header {
+    height: var(--header-height);
+    padding: 0 0.75rem;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* 防止压缩 */
+}
+
+.app-header input[type="file"] {
+    display: none;
+}
+
+.file-input-label {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: var(--accent-primary);
+    color: white;
+    cursor: pointer;
+    margin-right: 0.75rem;
+    border-radius: var(--card-radius);
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+}
+
+.file-input-label:hover {
+    background-color: var(--accent-secondary);
+}
+
+.file-input-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

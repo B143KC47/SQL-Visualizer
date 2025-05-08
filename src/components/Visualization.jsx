@@ -150,43 +150,99 @@ const Visualization = ({ queryResults, selectedText }) => {
       return;
     }
 
-    const sqlInfo = { /* 初始化为空结构 */ };
+    const sqlInfo = {
+      tables: [],
+      joins: [],
+      conditions: [], // WHERE conditions
+      selectColumns: [],
+      whereCells: [], // Parsed from WHERE for highlighting
+      orderBy: null,
+      groupByColumns: [],
+      havingConditions: []
+    };
 
-    // 使用正则表达式解析 selectedText
-    // 例如:
+    // 1. Parse FROM clause
+    // Matches "FROM table1, table2 AS t2" or "FROM schema.table1"
+    // Regex to capture multiple tables and optional aliases, looking for keywords or end of string
+    const fromRegex = /FROM\s+([^;]+?)(?:WHERE|JOIN|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|$)/i;
+    const fromMatch = selectedText.match(fromRegex);
+    if (fromMatch && fromMatch[1]) {
+      const tablesStr = fromMatch[1].trim();
+      // Split by comma, then by space/AS to get the table name (first part)
+      sqlInfo.tables = tablesStr.split(',').map(t => t.trim().split(/\s+AS\s+|\s+/i)[0]);
+    }
+
+    // 2. Parse SELECT clause
+    // Matches "SELECT col1, col2 AS c2, table.col3, table.*, * FROM ..."
     const selectRegex = /SELECT\s+(.+?)\s+FROM/i;
     const selectMatch = selectedText.match(selectRegex);
     if (selectMatch && selectMatch[1]) {
-      // ... 解析 SELECT 列 ...
-      // sqlInfo.selectColumns = ...
+      const colsStr = selectMatch[1].trim();
+      sqlInfo.selectColumns = colsStr.split(',').map(c => c.trim());
     }
 
-    const fromRegex = /FROM\s+([\w\s,]+)(?:\s+WHERE|\s+JOIN|...)/i;
-    const fromMatch = selectedText.match(fromRegex);
-    if (fromMatch && fromMatch[1]) {
-      // ... 解析 FROM 表 ...
-      // sqlInfo.tables = ...
+    // 3. Parse JOIN clauses (Iteratively to find all joins)
+    // Matches "[LEFT|RIGHT|INNER|FULL OUTER] JOIN table_name [AS alias] ON condition"
+    // Improved regex to handle optional AS for joined tables and lookaheads for termination
+    const joinRegex = /(?:(LEFT|RIGHT|INNER|FULL(?:\s+OUTER)?)\s+)?JOIN\s+([\w.]+)(?:\s+AS\s+[\w]+)?\s+ON\s+([^;]+?)(?=\s+JOIN\s+|\s+WHERE\s+|\s+GROUP BY\s+|\s+ORDER BY\s+|\s+HAVING\s+|\s+LIMIT\s+|\s+OFFSET\s+|$)/gi;
+    let joinMatch;
+    while ((joinMatch = joinRegex.exec(selectedText)) !== null) {
+      const joinType = joinMatch[1] ? joinMatch[1].trim().toUpperCase() : 'INNER';
+      const joinedTable = joinMatch[2].trim();
+      const onCondition = joinMatch[3].trim();
+      sqlInfo.joins.push({ type: joinType, table: joinedTable, condition: onCondition });
+      // Add joined table to tables list if not already present (simple approach)
+      // Avoid adding duplicates if already listed in FROM
+      if (!sqlInfo.tables.map(t => t.toUpperCase()).includes(joinedTable.toUpperCase())) {
+        sqlInfo.tables.push(joinedTable);
+      }
     }
 
-    // 类似地解析 JOIN, WHERE, GROUP BY, HAVING, ORDER BY
-    // ...
+    // 4. Parse WHERE clause
+    // Matches "WHERE condition1 AND condition2"
+    const whereRegex = /WHERE\s+([^;]+?)(?:GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|JOIN|$)/i;
+    const whereMatch = selectedText.match(whereRegex);
+    if (whereMatch && whereMatch[1]) {
+      const conditionsStr = whereMatch[1].trim();
+      sqlInfo.conditions = conditionsStr.split(/\s+(?:AND|OR)\s+/i).map(c => c.trim());
 
-    // 对于 WHERE 子句中的条件，进一步解析出列和值用于高亮
-    // if (whereMatch && whereMatch[1]) {
-    //   sqlInfo.conditions = ...
-    //   sqlInfo.whereCells = [];
-    //   sqlInfo.conditions.forEach(condition => {
-    //     const cellValueMatch = condition.match(/([\w\.]+)\s*=\s*['"]?([^'"\s;]+)['"]?/i);
-    //     if (cellValueMatch && cellValueMatch[2]) {
-    //       sqlInfo.whereCells.push({
-    //         column: cellValueMatch[1].trim(),
-    //         value: cellValueMatch[2].trim()
-    //       });
-    //     }
-    //   });
-    // }
+      sqlInfo.conditions.forEach(condition => {
+        // Regex for "column = value", "column = 'value'", "column = \"value\"", "table.column = value"
+        // Also handles common operators like >, <, >=, <=, !=, LIKE
+        const cellValueMatch = condition.match(/([\w.]+)\s*([><!=]=?|LIKE)\s*['"]?([^\s'"]+)['"]?/i);
+        if (cellValueMatch && cellValueMatch[1] && cellValueMatch[3]) {
+          sqlInfo.whereCells.push({
+            column: cellValueMatch[1].trim(),
+            operator: cellValueMatch[2].trim().toUpperCase(),
+            value: cellValueMatch[3].trim()
+          });
+        }
+      });
+    }
 
-    setSqlVisualization(sqlInfo); // 更新存储解析结果的状态
+    // 5. Parse GROUP BY clause
+    const groupByRegex = /GROUP\s+BY\s+([^;]+?)(?:ORDER BY|HAVING|LIMIT|OFFSET|JOIN|$)/i;
+    const groupByMatch = selectedText.match(groupByRegex);
+    if (groupByMatch && groupByMatch[1]) {
+      sqlInfo.groupByColumns = groupByMatch[1].trim().split(',').map(c => c.trim());
+    }
+
+    // 6. Parse HAVING clause
+    const havingRegex = /HAVING\s+([^;]+?)(?:ORDER BY|LIMIT|OFFSET|JOIN|$)/i;
+    const havingMatch = selectedText.match(havingRegex);
+    if (havingMatch && havingMatch[1]) {
+      sqlInfo.havingConditions = havingMatch[1].trim().split(/\s+(?:AND|OR)\s+/i).map(c => c.trim());
+    }
+
+    // 7. Parse ORDER BY clause
+    const orderByRegex = /ORDER\s+BY\s+([^;]+?)(?:LIMIT|OFFSET|JOIN|$)/i;
+    const orderByMatch = selectedText.match(orderByRegex);
+    if (orderByMatch && orderByMatch[1]) {
+      sqlInfo.orderBy = orderByMatch[1].trim();
+    }
+
+    console.log('Parsed SQL Info:', sqlInfo); // For debugging
+    setSqlVisualization(sqlInfo);
 
     if (sqlInfo.tables && sqlInfo.tables.length > 0) {
       startAnimation(); // 如果成功解析出表，则开始动画
@@ -202,7 +258,7 @@ const Visualization = ({ queryResults, selectedText }) => {
   };
   
   const renderTable = (tableName, x, y, width, height, isHighlighted = false) => {
-    const tableColor = isHighlighted ? '#e53e3e' : '#007bff';
+    const tableColor = isHighlighted ? '#1a68d1' : '#2c7be5'; // 使用新的颜色变量
     const textColor = '#ffffff';
 
     const hasSelectedColumns = sqlVisualization.selectColumns.some(col => {
@@ -238,13 +294,13 @@ const Visualization = ({ queryResults, selectedText }) => {
           width={width}
           height={height}
           fill={tableColor}
-          cornerRadius={0}
+          cornerRadius={0} // 使用直角设计
           shadowColor="black"
-          shadowBlur={5}
-          shadowOpacity={0.3}
-          shadowOffset={{ x: 2, y: 2 }}
-          stroke={(animationStep === 2 && isHighlighted) ? '#ff0000' : '#cccccc'}
-          strokeWidth={(animationStep === 2 && isHighlighted) ? 3 : 1}
+          shadowBlur={2} // 减少阴影效果
+          shadowOpacity={0.2}
+          shadowOffset={{ x: 1, y: 1 }}
+          stroke={(animationStep === 2 && isHighlighted) ? '#ffffff' : 'rgba(0,0,0,0.2)'}
+          strokeWidth={(animationStep === 2 && isHighlighted) ? 2 : 1}
         />
         <Text // 表名
           text={tableName}
@@ -297,7 +353,7 @@ const Visualization = ({ queryResults, selectedText }) => {
                   strokeWidth={rowStrokeWidth}
                   x={5}
                   y={i * 12}
-                  cornerRadius={0}
+                  cornerRadius={0} // 使用直角设计
                 />
               );
             })}
@@ -308,27 +364,27 @@ const Visualization = ({ queryResults, selectedText }) => {
   };
   
   const renderJoin = (fromX, fromY, toX, toY, isHighlighted = false) => {
-    const joinColor = isHighlighted ? '#e53e3e' : '#718096';
+    const joinColor = isHighlighted ? '#1a68d1' : '#4a5568'; // 调整连接线颜色
     return (
       <Group>
         <Arrow
           points={[fromX, fromY, toX, toY]}
-          pointerLength={10}
-          pointerWidth={10}
+          pointerLength={8}
+          pointerWidth={8}
           fill={joinColor}
           stroke={joinColor}
-          strokeWidth={isHighlighted ? 3 : 2}
+          strokeWidth={isHighlighted ? 2 : 1.5}
           dash={isHighlighted ? [] : [5, 2]}
         />
         {isHighlighted && (
           <Circle
             x={fromX + (toX - fromX) * 0.5}
             y={fromY + (toY - fromY) * 0.5}
-            radius={5}
+            radius={4}
             fill="#ffffff"
             shadowColor="white"
-            shadowBlur={10}
-            shadowOpacity={0.8}
+            shadowBlur={4}
+            shadowOpacity={0.6}
           />
         )}
       </Group>
@@ -348,7 +404,7 @@ const Visualization = ({ queryResults, selectedText }) => {
         <Stage width={stageSize.width} height={stageSize.height} ref={stageRef}>
           <Layer>
             <Text
-              text={animationStatus} // 使用 animationStatus 作为提示
+              text={animationStatus}
               x={padding}
               y={padding}
               fontSize={16}
@@ -506,7 +562,7 @@ const Visualization = ({ queryResults, selectedText }) => {
       </div>
       
       {/* 动画状态和步骤指示器 */}
-      {(animationStatus || isAnimating || animationStep !== -1) && ( // 仅当有状态或在动画中或已开始时显示
+      {(animationStatus || isAnimating || animationStep !== -1) && (
         <div className="animation-status">
           <div className="animation-step-indicator">
             <div className={`step ${animationStep === 0 ? 'active' : ''}`}>解析SQL</div>
